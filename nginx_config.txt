@@ -1,0 +1,78 @@
+server {
+
+        root /path;
+
+        index index.html index.htm index.nginx-debian.html;
+
+        server_name domain name;
+
+        location / {
+
+                try_files $uri $uri/ /index.html;
+        }
+
+           location /next {
+    proxy_pass http://localhost:6060;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection 'upgrade';
+    proxy_set_header Host $host;
+    proxy_cache_bypass $http_upgrade;
+       }
+
+           location /video {
+    proxy_pass http://localhost:6060;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection 'upgrade';
+    proxy_set_header Host $host;
+    proxy_cache_bypass $http_upgrade;
+           }
+
+
+    location /_next/static {
+        alias /path_to_next_app/build/static;
+    }
+        location /api {
+                proxy_pass http://localhost:6000;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_set_header Host $host;
+                proxy_cache_bypass $http_upgrade;
+    }
+
+
+        location /apple-app-site-association {
+
+                try_files $uri $uri/ /apple-app-site-association;
+        }
+
+location ^~ /blog {
+    alias /var/www/html/wordpress;
+    index index.php;
+
+    if (!-e $request_filename) {
+        rewrite /blog/(.*)$ /blog/index.php?q=$1 last;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $request_filename;
+        include fastcgi_params;
+    }
+}
+
+
+location @wordpress {
+    rewrite /blog/(.*) /blog/index.php?$args last;
+}
+
+
+
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/domain_name/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/domain_name/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}
